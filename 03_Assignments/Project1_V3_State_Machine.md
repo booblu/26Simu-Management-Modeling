@@ -54,4 +54,4 @@
 - `tests/test_invariants.py` (至少包含 3 个极端的物理断言)
 - `README.md` (你的决策 Memo)
 
-一切就绪？现在，去克隆 `00_Starter_Template`，签收属于你的空白画卷。
+一切就绪？现在，去点击教官发放的 GitHub Classroom 邀请链接，签收属于你的空白画卷。
