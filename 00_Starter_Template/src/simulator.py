@@ -10,32 +10,14 @@
 Q96 = 2**96
 
 class V3PoolStateMachine:
-    def __init__(self, initial_sqrtp_x96: int, initial_liquidity: int):
+    def __init__(self):
         """
-        初始化池子状态
+        初始化池子状态。
+        TODO: 作为 CTO，你需要思考这里应该接收哪些参数？（例如初始价格、初始流动性）
+        并且你需要自己设计如何去存储 Tick 字典、Current_Tick 和手续费全局变量。
         """
-        # --- [CEO 的红线] ---
-        # 你知道这下面应该定义哪些变量吗？比如 fee_growth_global, current_tick 等。
-        self.sqrtp_current_x96 = initial_sqrtp_x96
-        self.liquidity = initial_liquidity
-        
-        # TODO: 初始化 Ticks 字典和手续费累计值
         pass
 
-    def swap_exact_input(self, zero_for_one: bool, amount_in: int) -> int:
-        """
-        用户砸盘主函数。
-        :param zero_for_one: True 代表卖 Token0 换 Token1，False 则反之
-        :param amount_in: 砸入的数量 (整数 Wei)
-        :return: 换出的数量 amount_out (整数 Wei)
-        """
-        # TODO: 你的核心战场
-        # 1. 扣除 0.3% 手续费 (把它加在 fee_growth_global 里)
-        # 2. 跟据 Q64.96 公式推导价格下跌/上涨
-        # 3. 如果价格跌破了 current_tick，要怎么跨区间？
-        
-        # 这是一个让你能通过第一个 Assert 的占位符：
-        if amount_in == 0:
-            return 0
-            
-        raise NotImplementedError("CTO 还没把 V3 的数学翻译完！")
+    # TODO: 请自行设计属于你的 Swap 函数或其他核心法则函数。
+    # 提示：白皮书里提到了 AmountIn, AmountOut, LimitPrice。你要怎么设计你的 API？
+

@@ -81,50 +81,40 @@ def sqrtpx96_to_price(sqrtpx96: int) -> Decimal:
     return ratio ** 2
 ```
 
-### 4. 🧮 核心战役方程式：根据买单 $\Delta x$ 计算价格移动和能拿回多少货 $\Delta y$
-*警告：在 V3 的单一价格区间内计算 Swap，不准使用乘法和普通的除法，必须使用按位推导！*
-假设某个用户用市价砸盘卖出了 `amount_in` 数量的代币 $X$。此刻池子中当前的流动性是 `L`，当前价格是 `sqrtp_current_x96`。
+### 4. 🧮 授人以渔：把白皮书方程式转化为 Python 的位运算（你的核心战役）
 
-**公式推导（请核对 V3 白皮书 Eq. 6.13 与 6.15）：**
-卖出 $X$ 意味着 $X$ 的储量增加，价格将下跌（$\sqrt{P}$ 变小）。
-新的价格边界为：$$ \sqrt{P_{next}} = \frac{\sqrt{P} \cdot L}{\Delta X \cdot \sqrt{P} + L} $$
+在这个项目里，你的核心任务是把 Uniswap V3 白皮书里的方程式（如 Eq 6.13, 6.15）翻译为没有小数误差的 Python 整数代码。
 
-**把它翻译成 Python 里的 EVM 等效代码（必须是全整数碰撞）：**
+**以白皮书中的 $\Delta \sqrt{P}$ 公式为例：**
+白皮书公式：$\Delta \sqrt{P} = \frac{\Delta y}{L}$
+
+在 Solidity 和你的仿真器底层，这不是一个简单的浮点数除法。因为 $\sqrt{P}$ 是以 $Q64.96$ 存储的。
+
+你**不能**这样写：
 ```python
-def get_next_sqrt_price_from_amount0_in(sqrtp_current_x96: int, liquidity: int, amount_in: int) -> int:
-    """
-    精确模拟 Solidity 底下的整数除法，找出砸盘后秒针停在哪个价格。
-    """
-    # 按照公式展开时，所有分子分母都要带着 Q96 漂移
-    numerator1 = liquidity << 96 # 等效于 liquidity * 2**96
-    numerator2 = sqrtp_current_x96
-    
-    # 模拟 Solidity 的底板除法（// 向零截断）以确保不产生幻觉金额
-    denominator = (liquidity << 96) + (amount_in * sqrtp_current_x96)
-    
-    # 如果分母算出来是个不可理喻的数，直接抛出红线（这极压测试就起作用了）
-    assert denominator > 0, "INVARIANT BROKEN: Math Underflow"
-    
-    # Solidity 中的机制： 先乘后除保证精度不提前丢失
-    next_sqrtp_x96 = (numerator1 * numerator2) // denominator
-    return next_sqrtp_x96
+# ❌ 错误示范：使用了浮点数除法，产生幻觉误差，且没有携带 Q96 定点数缩放
+delta_sqrtp = delta_y / L
 ```
+
+**CTO 的思考框架（请自行推导实际代码）：**
+1. **统一数量级**：分子 $\Delta y$ 是普通整数，分母 $L$ 是普通整数。相除会得到普通浮点数。但系统需要的是 $Q64.96$！所以，你必须在除法发生前，把分子强行拉扯到 $Q64.96$ 维度（即 `delta_y << 96`）。
+2. **截断除法防超发**：在所有涉及到“计算应该吐给用户多少钱”或“价格变化”时，请使用 Python 的向零截断整数除法（`//`）。这完美对应 Solidity 中的 `uint256` 除法法则。
+
+**现在，你的挑战来了（请不要去问 AI 要代码，请自己写）：**
+请自行翻开 V3 白皮书，找到“基于投入的 $\Delta x$ 或 $\Delta y$ 来计算下一个价格 $\sqrt{P_{next}}$ ”的核心公式。
+然后，利用上述的“左移 96 位”和“底板除法 `//`”原理，把它写在你的 `simulator.py` 里。
 
 ---
 
-## 💡 Sprint 1 生存终极建议
-当你在做 Project 1 以及极压测试（`test_invariants.py`）时，**所有的 Assert（断言），必须去 Assert 你通过上面这些纯整数函数算出来的结果**，千万不要把两边转成 `float` 去对比大小，那毫无技术含金量。
+## 💡 Sprint 1 极限断言法则
+当你在撰写 `tests/test_invariants.py` 时，**所有的 Assert（断言）必须在底层的 Q64.96 整数域进行对比**。千万不要把两边还原回 `float` 去对比大小，那毫无技术含金量。
 
-你的红线代码应该是这样的铁血面孔：
+你的红线代码应该长这样（理念）：
 ```python
 def test_buy_zero_should_not_move_price():
-    initial_sqrtp = 3961408125713216879677197516800
-    liquidity = 10**18
-    # 极压测试：输入 0 个币砸盘
-    next_price = get_next_sqrt_price_from_amount0_in(initial_sqrtp, liquidity, 0)
-    
-    # 物理断言：在底层整数级，世界必须未动分毫
-    assert next_price == initial_sqrtp
+    # 物理断言原则：如果向系统输入 0 个币的交易，底层的 sqrtp_x96 必须一丝不苟，绝对等于交易前。
+    # assert next_price_x96 == initial_price_x96
+    pass
 ```
 
-有了这份作弊纸，大模型再写出 `math.sqrt()` 或 `float(P)` 这种弱智代码时，你作为 CEO 就拥有了把它的代码打回重写的生杀大权。祝武运昌隆！
+只有当你能自己拼凑出正确的位移公式并扛过这些断言时，你才是真正掌握了二阶机制建模的密码。祝武运昌隆！
