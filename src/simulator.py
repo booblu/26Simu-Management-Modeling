@@ -121,29 +121,6 @@ class V3Pool:
         
         return amount_out, fee_amount
     
-    def _swap_token0_for_token1(self, amount_in: int) -> int:
-        """用token0购买token1"""
-        # 基于Uniswap V3的数学公式
-        # Δy = L * (√P - √P')
-        # Δx = L * (1/√P' - 1/√P)
-        
-        sqrt_price = self.sqrt_price_x96
-        liquidity = self.liquidity
-        
-        # 计算新的sqrtPrice
-        numerator = liquidity * Q96
-        denominator = liquidity * Q96 / sqrt_price + amount_in
-        sqrt_price_next = numerator // denominator
-        
-        # 计算输出数量
-        amount_out = liquidity * (sqrt_price - sqrt_price_next) // Q96
-        
-        # 更新池子状态
-        self.sqrt_price_x96 = sqrt_price_next
-        self.current_tick = self._sqrt_price_to_tick(sqrt_price_next)
-        
-        return amount_out
-    
     def _swap_token0_for_token1_with_crossing(self, amount_in: int) -> int:
         """用token0购买token1（支持跨区间）"""
         remaining_amount = amount_in
@@ -353,26 +330,3 @@ def create_pool_from_config(initial_price: float, initial_liquidity: int, fee_ra
     """
     sqrt_price_x96 = V3Pool.price_to_sqrtpx96(initial_price)
     return V3Pool(sqrt_price_x96, initial_liquidity, fee_rate, tick_spacing, min_tick, max_tick)
-
-
-if __name__ == "__main__":
-    # 演示代码
-    print("=== Uniswap V3 状态机仿真器演示 ===")
-    
-    # 创建池子
-    pool = create_pool_from_config(
-        initial_price=2500.0,
-        initial_liquidity=1000000000000000000,
-        fee_rate=0.003
-    )
-    
-    print(f"初始池子状态: {pool.get_pool_state()}")
-    
-    # 执行一笔交易
-    amount_in = 1000000  # 1 USDC
-    amount_out, fee = pool.swap_exact_input(amount_in, zero_for_one=True)
-    
-    print(f"交易结果: 输入 {amount_in} USDC, 输出 {amount_out} ETH, 手续费 {fee} USDC")
-    print(f"交易后池子状态: {pool.get_pool_state()}")
-    
-    print("\n演示完成！")
