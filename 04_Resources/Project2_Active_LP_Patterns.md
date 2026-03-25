@@ -38,9 +38,12 @@ def milestone_1_validation(csv_path: str):
     
     for index, row in df.iterrows():
         # 执行每一笔从真实世界扒下来的 Swap
+        # 【核心谜题】：如何把表里的 amount0 和 amount1 转化为引擎参数？
+        # 提示：在 V3 的 Swap 日志里，带有正号(+)和负号(-)的数字代表了池子资产的增加和减少。
+        # 你必须自己搞清楚：是谁在向池子输入？谁在被抽出？这决定了 zeroForOne 是 True 还是 False！
         engine.execute_swap(
-            zeroForOne=(row['amount0'] > 0), # 正数意味着向池子输入 USDC
-            amountSpecified=abs(row['amount0']) if row['amount0'] > 0 else abs(row['amount1'])
+            zeroForOne=..., # TODO: 根据真实日志的正负号自行推算交易方向
+            amountSpecified=... # TODO: 自行推算应该取哪个数字作为 amountSpecified
         )
         
     print(f"你的终态价格: {engine.get_sqrtPriceX96()}")
