@@ -7,13 +7,16 @@
 
 为保证信噪比，本知识库采用高维结构化设计。请根据你需要探索的领域，进入对应的工作舱：
 
-### 📖 [01_Syllabus_and_Docs](./01_Syllabus_and_Docs)
+### 📖 [00_Syllabus_and_Docs](./00_Syllabus_and_Docs)
 > **课程全局视界**。存放课程的元数据：教学大纲、学习路线图、排期规划以及必读书单。
 
-### 👨‍🏫 [02_Lectures](./02_Lectures)
-> **主线剧情副本**。存放每周的授课讲义、核心概念解析及现场课件（持续滚动更新）。
+### 👨‍🏫 [01_Lectures](./01_Lectures)
+> **理论讲授殿堂 (Theory & Concepts)**。存放每周的授课核心理论讲义、关键概念抽象、数学推导及底层逻辑剖析（持续滚动更新）。
 
-### 📝 [03_Assignments_Info](./03_Assignments_Info)
+### 💻 [02_Labs_and_Workshops](./02_Labs_and_Workshops)
+> **实操沙盘与工坊 (Practicum & Kickoff)**。存放每周的上机/沙盘实验指南、工程兵棋推演（Kickoff）简报、环境配置规范及红绿灯验收红线。
+
+### 📝 [03_Assignments](./03_Assignments)
 > **实验协议书**。存放每一次作业的官方说明、评分标准 (Rubrics) 与参考规范。
 
 ### 🛠️ [04_Resources](./04_Resources)
