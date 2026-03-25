@@ -23,10 +23,12 @@ def run_simulation(agent, csv_data_path):
     pass
 
 if __name__ == "__main__":
-    csv_file = "experiments/data/weth_usdc_flash_crash.csv"
+    # 【任务】替换为你自己通过 SQL 或 API 获取清洗后的 5.19 灾难数据路径
+    csv_file = "experiments/data/your_custom_519_data.csv"
     
     vault_base = AgentVault(initial_usdc=10000, initial_eth=0)
     base_agent = BaselineAgent(vault_base)
+
     
     vault_cand = AgentVault(initial_usdc=10000, initial_eth=0)
     cand_agent = CandidateAgent(vault_cand)

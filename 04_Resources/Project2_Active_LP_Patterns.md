@@ -4,35 +4,51 @@
 
 ---
 
-## 🏎️ 秘籍 1：如何在你的 Python 脚本中喂入真实世界？
+## 🏎️ 秘籍 1：自己动手丰衣足食 (Data Sourcing - The 519 Crash)
 
-在 P2 中，你将从 `00_Starter_Template` 里拿到一个真实历史 CSV (`experiments/data/weth_usdc_flash_crash.csv`)。
-你要做的是写一个主循环函数，像时间机器一样播发这些订单。
+在 P2 中，你**不会**收到现成的 CSV。你必须像个真正的 Quant 一样去获取以太坊 2021-05-19 的历史数据。
 
+**推荐路径：使用 Dune Analytics (免费)**
+注册 Dune 后，使用其 Ethereum 数据库进行 PostgreSQL 查询。
+示例查询（抓取 `USDC/WETH 0.3%` 池子在 5.19 这天的所有 Swap）：
+```sql
+SELECT 
+  block_time,
+  amount0,
+  amount1,
+  "sqrtPriceX96",
+  liquidity
+FROM uniswap_v3_ethereum.Swap
+WHERE contract_address = 0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8
+  AND block_time >= TIMESTAMP '2021-05-19 00:00:00'
+  AND block_time <= TIMESTAMP '2021-05-19 23:59:59'
+ORDER BY block_time ASC
+```
+点击 Export 导出 CSV `your_519_data.csv`，把它放入你的 `experiments/data/` 中。
+
+在你自己的主循环脚本中，像时间机器一样播发这些订单：
 ```python
 import pandas as pd
 from src.simulator import V3Engine # 这是你在 P1 写的机器
 
 def milestone_1_validation(csv_path: str):
-    # 你的 P1 V3 引擎
-    engine = V3Engine(initial_priceX96=...)  # 根据 CSV 第一行初始化
+    # 根据你查到的在 2021-05-19 00:00:00 这一刻之前的池子状态进行初始化
+    engine = V3Engine(initial_sqrtPriceX96=..., initial_liquidity=...)  
     df = pd.read_csv(csv_path)
     
     for index, row in df.iterrows():
         # 执行每一笔从真实世界扒下来的 Swap
-        # row['amount0In'], row['amount1In']
-        # row['zeroForOne'] 决定方向
         engine.execute_swap(
-            zeroForOne=row['zeroForOne'],
-            amountSpecified=row['amountSpecified']
+            zeroForOne=(row['amount0'] > 0), # 正数意味着向池子输入 USDC
+            amountSpecified=abs(row['amount0']) if row['amount0'] > 0 else abs(row['amount1'])
         )
         
     print(f"你的终态价格: {engine.get_sqrtPriceX96()}")
-    print(f"链上真实价格: {df.iloc[-1]['end_sqrtPriceX96']}")
+    print(f"链上真实价格: {df.iloc[-1]['sqrtPriceX96']}")
     # assert 你的价格 == 链上价格
 ```
 
-**⚠️ 防错警告 (Gotcha)：在真实世界，哪怕相差 $1 wei$ 的四舍五入，跑一万笔订单后价格都会走偏。你必须保证你的 P1 引擎绝对严苛吻合了白皮书的截断物理法则。**
+**⚠️ 防错警告 (Gotcha)：真实世界里的 Swap 会动态改变 FeeGrowth，并且其他人的 Mint/Burn 动作会改变全局 `L` (Liquidity)。因此，要求你的 P1 模型必须完美挂载添加/移除流动性的机制。**
 
 ---
 

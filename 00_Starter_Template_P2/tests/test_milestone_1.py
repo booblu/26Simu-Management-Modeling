@@ -15,27 +15,25 @@ def test_p1_engine_with_real_historical_data():
     不要修改预埋价格断言！你的引擎必须能够 100% 精确推导。
     """
     # 真实链上快照初始状态: 
-    # 在 2021 年某个区块 ETH/USDC 500 万分比池子
-    INITIAL_SQRT_PRICE_X96 = 1999966144503729587422770258286
+    # 【任务】你需要自己去 Dune 或区块浏览器找到 2021-05-19 零点开始时的精确池子参数
+    # 来初始化你的引擎
+    engine = V3Engine(initial_sqrtPriceX96=..., initial_liquidity=...)
     
-    engine = V3Engine(initial_sqrtPriceX96=INITIAL_SQRT_PRICE_X96)
+    # 获取你自己千辛万苦抓取整理的 5.19 灾难数据
+    csv_path = os.path.join(os.path.dirname(__file__), '../experiments/data/your_custom_519_data.csv')
+    assert os.path.exists(csv_path), "🛑 停下！去 Dune Analytics 下载真实数据！"
     
-    # 获取同目录下的预埋短路数据 (Mocked for testing)
-    csv_path = os.path.join(os.path.dirname(__file__), '../experiments/data/weth_usdc_flash_crash.csv')
     df = pd.read_csv(csv_path)
     
     for index, row in df.iterrows():
-        # 这里模拟了每笔真实链上的 Swap 记录输入你的引擎
-        engine.execute_swap(
-            zeroForOne=bool(row['zeroForOne']),
-            amountSpecified=int(row['amountSpecified'])
-        )
+        # 这里模拟了你提取的每笔真实链上的 Swap 记录
+        engine.execute_swap(...)
         
     final_price_x96 = engine.get_sqrtPriceX96()
     
-    # 这是我们在链上读取区块状态得到的极其精准的最终截断价格！差 1 wei 都不行。
-    # 这里我们随便模拟一个靶标，你实现作业时需要保证匹配。
-    TARGET_PRICE_X96 = 2000000000000000000000000000000
+    # 你的靶标：这是链上 2021-05-19 最后一秒区块的 `sqrtPriceX96`！去查证并写死在这里。
+    TARGET_PRICE_X96 = "替换为你查到的真实数据"
+
     
     print(f"你的引擎最终求导价格: {final_price_x96}")
     assert final_price_x96 == TARGET_PRICE_X96, "你的引擎有运算精度的流失或边界 Bug！"
